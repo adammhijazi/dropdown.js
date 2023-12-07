@@ -57,7 +57,7 @@
                 $dropdown.data("select", $select);
 
                 // Create the fake input used as "select" element and cache it as $input
-                var $input = $("<input type=\"text\" readonly class=\"fakeinput\" aria-haspopup=\"listbox\">");
+                var $input = $("<input type=\"text\" readonly class=\"fakeinput\" aria-haspopup=\"listbox\" aria-label=\"Option\">");
                 if ($dropdownLabel && $dropdownLabel.attr("id")) {
                     $input.attr("aria-labelledby='" + $dropdownLabel.attr("id") + "'");
                 }
@@ -67,7 +67,7 @@
 
                 // Create the UL that will be used as dropdown and cache it as $ul
                 // Set translate to no as translations in select will propagate when elements are added	
-                var $ul = $("<ul class=\"notranslate\" translate=\"no\" role=\"listbox\" tabindex=\"-1\"></ul>");
+                var $ul = $("<ul class=\"notranslate\" translate=\"no\" role=\"listbox\" tabindex=\"-1\" aria-label=\"Choose a value\"></ul>");
                 $ul.data("select", $select);
                 // Copy all aria attributes	
                 $.each([].slice.call($select.get(0).attributes).filter(function (attr) {
@@ -208,58 +208,80 @@
                 }
 
                 // Listen for new added options and update dropdown if needed
-                $select.on("DOMNodeInserted", function (e) {
-                    if (options.lazyload && !$select.data("loaded")) {
-                        return;
-                    }
+                var addedNodesObserver = new MutationObserver(function (mutationList) {
+                    return mutationList.filter(function (m) {
+                        return m.type === "childList";
+                    }).forEach(function (m) {
+                        m.addedNodes.forEach(function (n) {
+                            if (options.lazyload && !$select.data("loaded")) {
+                                return;
+                            }
 
-                    var $this = $(e.target);
+                            var $this = $(n);
 
-                    // Google translate may insert DOM nodes as <font>
-                    if ($this.prop("tagName") !== "OPTION") {
-                        $this = $this.closest("option");
-                    }
-                    var value = $this.val();
-                    if (!value.length) return;
+                            // Google translate may insert DOM nodes as <font>
+                            if ($this.prop("tagName") !== "OPTION") {
+                                $this = $this.closest("option");
+                            }
+                            var value = $this.val();
+                            if (!value.length) return;
 
-                    var existingOption = $ul.children().filter(function () { return $(this).data("value") === value; });
-                    // Option already exists, likely subtree nodes were modified triggering this
-                    if (existingOption.length) {
-                        existingOption.text($this.text());
-                    }
-                    else {
-                        methods._addOption($ul, $this);
-                    }
+                            var existingOption = $ul.children().filter(function () { return $(this).data("value") === value; });
+                            // Option already exists, likely subtree nodes were modified triggering this
+                            if (existingOption.length) {
+                                var existingIndex = $ul.children().index(existingOption),
+                                    newIndex = $select.find("option").index($this);
+                                // Option is in the incorrect order
+                                if (newIndex >= 0 && existingIndex < newIndex) {
+                                    existingOption.remove();
+                                    methods._addOption($ul, $this);
+                                    return;
+                                }
+                                existingOption.text($this.text());
+                            }
+                            else {
+                                methods._addOption($ul, $this);
+                            }
+                        });
+                    });
                 });
 
-                $select.on("DOMNodeRemoved", function (e) {
-                    if (options.lazyload && !$select.data("loaded")) {
-                        return;
-                    }
+                addedNodesObserver.observe($select[0], { childList: true, subtree: true });
 
-                    // Use timeout as DOMNodeRemoved fires prior to node removal from DOM
-                    setTimeout(function () {
-                        var deletedValue = $(e.target).attr("value"),
-                            existingOption = $select.children().filter(function () { return this.value === deletedValue; }),
-                            $selected;
+                var removedNodesObserver = new MutationObserver(function (mutationList) {
+                    return mutationList.filter(function (m) {
+                        return m.type === "childList";
+                    }).forEach(function (m) {
+                        m.removedNodes.forEach(function (n) {
+                            if (options.lazyload && !$select.data("loaded")) {
+                                return;
+                            }
+                            setTimeout(function () {
+                                var deletedValue = $(n).attr("value"),
+                                    existingOption = $select.children().filter(function () { return this.value === deletedValue; }),
+                                    $selected;
 
-                        // Option was not actually removed, likely subtree nodes were modified triggering this
-                        if (existingOption.length) {
-                            methods._updateLiText($ul, deletedValue, existingOption.text());
-                        }
-                        else {
-                            $ul.find("li").filter(function () { return $(this).data("value") === deletedValue; }).remove();
-                        }
+                                // Option was not actually removed, likely subtree nodes were modified triggering this
+                                if (existingOption.length) {
+                                    methods._updateLiText($ul, deletedValue, existingOption.text());
+                                }
+                                else {
+                                    $ul.find("li").filter(function () { return $(this).data("value") === deletedValue; }).remove();
+                                }
 
-                        if ($select.find(":selected").length) {
-                            $selected = $select.find(":selected").last();
-                        }
-                        else {
-                            $selected = $select.find("option, li").first();
-                        }
-                        methods._select($dropdown, $selected);
-                    }, 100);
+                                if ($select.find(":selected").length) {
+                                    $selected = $select.find(":selected").last();
+                                }
+                                else {
+                                    $selected = $select.find("option, li").first();
+                                }
+                                methods._select($dropdown, $selected);
+                            }, 100);
+                        });
+                    });
                 });
+
+                removedNodesObserver.observe($select[0], { childList: true, subtree: true });
 
                 // Update dropdown when using val, need to use .val("value").trigger("change");
                 $select.on("change", function (e) {
@@ -365,17 +387,25 @@
             }
 
             if (options.autoinit) {
-                $(document).on("DOMNodeInserted", function (e) {
-                    var $this = $(e.target);
-                    if (!$this.is("select")) {
-                        $this = $this.find('select');
-                    }
-                    $this.each(function () {
-                        if ($(this).is(options.autoinit)) {
-                            initElement($(this));
-                        }
+                var addedNodesObserver = new MutationObserver(function (mutationList) {
+                    return mutationList.filter(function (m) {
+                        return m.type === "childList";
+                    }).forEach(function (m) {
+                        m.addedNodes.forEach(function (n) {
+                            var $this = $(n);
+                            if (!$this.is("select")) {
+                                $this = $this.find("select");
+                            }
+                            $this.each(function () {
+                                if ($(this).is(options.autoinit)) {
+                                    initElement($(this));
+                                }
+                            });
+                        });
                     });
                 });
+
+                addedNodesObserver.observe($document[0], { childList: true, subtree: true });
             }
 
             // Loop through elements
