@@ -45,6 +45,23 @@
 .dropdownjs > ul  > li.dropdownjs-add {
   padding: 0;
 }
+.dropdownjs > ul > li.dropdownjs-filter {
+  position: sticky;
+  top: -10px;
+  z-index: 1;
+  padding: 10px;
+  background: #FFF;
+}
+.dropdownjs > ul > li.dropdownjs-filter > input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d4d4d4;
+}
+.dropdownjs > ul > li.dropdownjs-no-results {
+  cursor: default;
+  color: #777;
+  text-align: center;
+}
 .dropdownjs > ul  > li.dropdownjs-add > input {
   border: 0;
   padding: 10px 20px;

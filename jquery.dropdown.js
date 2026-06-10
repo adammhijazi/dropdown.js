@@ -20,6 +20,7 @@
             "autoinit": false,
             "callback": false,
             "lazyload": true,
+            "filter": true,
             "onSelected": false,
             "destroy": function(element) {
                 this.destroy(element);
@@ -48,10 +49,17 @@
                     // Does it allow to create new options dynamically?
                     dynamicOptions = $select.attr("data-dynamic-opts"),
                     $dynamicInput = $(),
+                    filterEnabled = options.filter,
+                    $filterInput = $(),
+                    $noResults = $(),
                     // Create the dropdown wrapper
                     $dropdown = $("<div></div>"),
                     // Label
                     $dropdownLabel = $select.attr("id") ? $("label[for='" + $select.attr("id") + "']") : null;
+
+                if ($select.is("[data-filter]")) {
+                    filterEnabled = String($select.attr("data-filter")).toLowerCase() !== "false";
+                }
 
                 $dropdown.addClass("dropdownjs").addClass(options.dropdownClass);
                 $dropdown.data("select", $select);
@@ -81,6 +89,13 @@
 
                 // Append it to the dropdown	
                 $dropdown.append($ul);
+
+                if (filterEnabled) {
+                    $filterInput = $("<input type=\"text\" class=\"dropdownjs-filter-input\" placeholder=\"Search...\" aria-label=\"Search options\">");
+                    $ul.append($("<li class=\"dropdownjs-filter\" role=\"presentation\"></li>").append($filterInput));
+                    $noResults = $("<li class=\"dropdownjs-no-results\" role=\"status\">No results found</li>").hide();
+                    $ul.append($noResults);
+                }
 
                 // Transfer the placeholder attribute
                 $input.attr("placeholder", $select.attr("placeholder"));
@@ -135,6 +150,49 @@
                 var searchBuffer = "",
                     lastSearchTime = 0;
 
+                function filterOptions(query) {
+                    var normalizedQuery = query.trim().toLowerCase(),
+                        $options = $ul.children("li[role=option]");
+
+                    $options.each(function () {
+                        var $option = $(this),
+                            matchIndex = $option.text().trim().toLowerCase().indexOf(normalizedQuery);
+
+                        $option.data("match-index", matchIndex);
+                        $option.toggle(!normalizedQuery || matchIndex !== -1);
+                    });
+
+                    if (normalizedQuery) {
+                        $options.filter(":visible").sort(function (a, b) {
+                            var $a = $(a),
+                                $b = $(b);
+
+                            return $a.data("match-index") - $b.data("match-index") ||
+                                $a.data("option-index") - $b.data("option-index");
+                        }).insertBefore($noResults);
+                    } else {
+                        $options.sort(function (a, b) {
+                            return $(a).data("option-index") - $(b).data("option-index");
+                        }).insertBefore($noResults);
+                    }
+
+                    $noResults.toggle(Boolean(normalizedQuery) && !$options.filter(":visible").length);
+                }
+
+                if (filterEnabled) {
+                    $filterInput.on("input", function () {
+                        filterOptions($(this).val());
+                    });
+
+                    $filterInput.on("keydown", function (e) {
+                        if (e.which === 27) {
+                            e.preventDefault();
+                            $filterInput.blur();
+                            $input.removeClass("focus");
+                        }
+                    });
+                }
+
                 // Handle keyboard navigation
                 $input.on("keydown", function (e) {
                     var activeEl = $dropdown.find(".selected"),
@@ -178,7 +236,7 @@
                             }
                             lastSearchTime = now;
 
-                            searchOptions = $ul.children("li:not(.dropdownjs-add):not(.disabled)").filter(function () {
+                            searchOptions = $ul.children("li[role=option]:not(.disabled)").filter(function () {
                                 return $(this).text().trim().toLowerCase().indexOf(searchBuffer) === 0;
                             });
 
@@ -208,19 +266,19 @@
                     setTimeout(function () {
                         var activeElement = document.activeElement,
                             ul = $ul.get(0);
-                        if ($ul.is(":visible") && ul !== activeElement && ul !== activeElement.parentNode) {
+                        if ($ul.is(":visible") && ul !== activeElement && !$.contains(ul, activeElement)) {
                             $input.removeClass("focus");
                         }
                     }, 100);
                 });
                 // On click, set the clicked one as selected
-                $ul.on("click", "li:not(.dropdownjs-add)", function (e) {
+                $ul.on("click", "li[role=option]", function (e) {
                     methods._select($dropdown, $(this));
                   
                     // trigger change event, if declared on the original selector
                     $select.change();
                 });
-                $ul.on("keydown", "li:not(.dropdownjs-add)", function (e) {
+                $ul.on("keydown", "li[role=option]", function (e) {
                     if (e.which === 27) {
                         $(".dropdownjs > ul > li").attr("tabindex", -1);
                         return $input.removeClass("focus").blur();
@@ -231,7 +289,7 @@
                     }
                 });
 
-                $ul.on("focus", "li:not(.dropdownjs-add)", function () {
+                $ul.on("focus", "li[role=option]", function () {
                     if ($select.is(":disabled")) {
                         return;
                     }
@@ -385,6 +443,14 @@
 
                     $(this).next("ul").css("max-height", height - 20);
                     $(this).addClass("focus");
+
+                    if (filterEnabled) {
+                        $filterInput.val("");
+                        filterOptions("");
+                        setTimeout(function () {
+                            $filterInput.focus();
+                        }, 0);
+                    }
                 });
                 // Close every dropdown on click outside
                 $(document).on("click", function (e) {
@@ -393,6 +459,9 @@
 
                     // Don't close the dropdown if user is clicking inside the dynamic-opts widget
                     if ($(e.target).parents(".dropdownjs-add").length || $(e.target).is(".dropdownjs-add")) return;
+
+                    // Don't close the dropdown while using the filter
+                    if ($(e.target).parents(".dropdownjs-filter").length || $(e.target).is(".dropdownjs-filter")) return;
 
                     // Close opened dropdowns
                     $(".dropdownjs > ul > li").attr("tabindex", -1);
@@ -450,7 +519,7 @@
                     });
                 });
 
-                addedNodesObserver.observe($document[0], { childList: true, subtree: true });
+                addedNodesObserver.observe(document, { childList: true, subtree: true });
             }
 
             // Loop through elements
@@ -548,6 +617,7 @@
             }
             // Set the value of the option
             $option.data("value", $this.val());
+            $option.data("option-index", $ul.data("select").find("option").index($this));
 
             // Will user be able to remove this option?
             if ($ul.data("select").attr("data-dynamic-opts")) {
@@ -569,7 +639,9 @@
             }
 
             // Append option to our dropdown
-            if ($ul.find(".dropdownjs-add").length) {
+            if ($ul.find(".dropdownjs-no-results").length) {
+                $ul.find(".dropdownjs-no-results").before($option);
+            } else if ($ul.find(".dropdownjs-add").length) {
                 $ul.find(".dropdownjs-add").before($option);
             } else {
                 $ul.append($option);

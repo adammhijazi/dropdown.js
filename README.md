@@ -26,6 +26,16 @@ What else? Maybe we want to be able to style our dropdown with our own classes s
 
 With this command we init every `.select` element (yes they are initialized always in the same way) and the `my-dropdown` class will be applied to the dropdown wrapper (ex: `<select>`) and `my-option awesome` will be applied to the options (ex: `<option>`).
 
+### Filter options
+
+Dropdown filtering is enabled by default. Disable it globally through the plugin options:
+
+    $(".select").dropdown({ "filter": false });
+
+Override the setting for an individual select with the `data-filter` attribute:
+
+    <select class="select" data-filter="false"></select>
+
 ### Please don't fill my DOM with thousand of DIVs!!!
 
 Don't worry friend, this is the markup used by Dropdown.js:
