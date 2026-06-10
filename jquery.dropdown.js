@@ -132,6 +132,9 @@
                 //---------------------------------------//
                 // DROPDOWN EVENTS                       //
                 //---------------------------------------//
+                var searchBuffer = "",
+                    lastSearchTime = 0;
+
                 // Handle keyboard navigation
                 $input.on("keydown", function (e) {
                     var activeEl = $dropdown.find(".selected"),
@@ -151,6 +154,48 @@
                         $select.change();
                         $input.removeClass("focus").blur();
                         match = true;
+                    }
+                    // Type-to-select while the dropdown is open
+                    else if ($input.hasClass("focus") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                        var key = e.key;
+
+                        // Support browsers that do not provide KeyboardEvent.key
+                        if (!key && e.which >= 32 && e.which <= 126) {
+                            key = String.fromCharCode(e.which);
+                        }
+
+                        if (key && key.length === 1) {
+                            var now = Date.now(),
+                                normalizedKey = key.toLowerCase(),
+                                repeatedKey = now - lastSearchTime <= 1000 && searchBuffer === normalizedKey,
+                                searchOptions,
+                                $target;
+
+                            if (now - lastSearchTime > 1000 || repeatedKey) {
+                                searchBuffer = normalizedKey;
+                            } else {
+                                searchBuffer += normalizedKey;
+                            }
+                            lastSearchTime = now;
+
+                            searchOptions = $ul.children("li:not(.dropdownjs-add):not(.disabled)").filter(function () {
+                                return $(this).text().trim().toLowerCase().indexOf(searchBuffer) === 0;
+                            });
+
+                            if (searchOptions.length) {
+                                if (repeatedKey) {
+                                    var selectedIndex = searchOptions.index(activeEl);
+                                    $target = searchOptions.eq((selectedIndex + 1) % searchOptions.length);
+                                } else {
+                                    $target = searchOptions.first();
+                                }
+
+                                methods._select($dropdown, $target);
+                                $ul.scrollTop($ul.scrollTop() + $target.position().top - ($ul.innerHeight() / 2));
+                            }
+
+                            match = true;
+                        }
                     }
                     if (match) {
                         return false;
