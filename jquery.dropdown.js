@@ -20,7 +20,7 @@
             "autoinit": false,
             "callback": false,
             "lazyload": true,
-            "filter": true,
+            "filter": false,
             "onSelected": false,
             "destroy": function(element) {
                 this.destroy(element);
@@ -50,7 +50,6 @@
                     dynamicOptions = $select.attr("data-dynamic-opts"),
                     $dynamicInput = $(),
                     filterEnabled = options.filter,
-                    $filterInput = $(),
                     $noResults = $(),
                     // Create the dropdown wrapper
                     $dropdown = $("<div></div>"),
@@ -91,8 +90,6 @@
                 $dropdown.append($ul);
 
                 if (filterEnabled) {
-                    $filterInput = $("<input type=\"text\" class=\"dropdownjs-filter-input\" placeholder=\"Search...\" aria-label=\"Search options\">");
-                    $ul.append($("<li class=\"dropdownjs-filter\" role=\"presentation\"></li>").append($filterInput));
                     $noResults = $("<li class=\"dropdownjs-no-results\" role=\"status\">No results found</li>").hide();
                     $ul.append($noResults);
                 }
@@ -179,16 +176,25 @@
                     $noResults.toggle(Boolean(normalizedQuery) && !$options.filter(":visible").length);
                 }
 
-                if (filterEnabled) {
-                    $filterInput.on("input", function () {
-                        filterOptions($(this).val());
-                    });
+                function restoreFilterInput() {
+                    if (!filterEnabled) {
+                        return;
+                    }
 
-                    $filterInput.on("keydown", function (e) {
-                        if (e.which === 27) {
-                            e.preventDefault();
-                            $filterInput.blur();
-                            $input.removeClass("focus");
+                    filterOptions("");
+                    $input.attr("readonly", true);
+                    $input.val($dropdown.find("li.selected").last().text().trim());
+                }
+
+                function closeDropdown() {
+                    restoreFilterInput();
+                    $input.removeClass("focus").blur();
+                }
+
+                if (filterEnabled) {
+                    $input.on("input", function () {
+                        if ($input.hasClass("focus")) {
+                            filterOptions($(this).val());
                         }
                     });
                 }
@@ -197,8 +203,13 @@
                 $input.on("keydown", function (e) {
                     var activeEl = $dropdown.find(".selected"),
                         match = false;
+                    // Escape
+                    if (e.which === 27) {
+                        closeDropdown();
+                        match = true;
+                    }
                     // Up arrow
-                    if (e.which === 38) {
+                    else if (e.which === 38) {
                         methods._select($dropdown, activeEl.prev());
                         match = true;
                     }
@@ -210,11 +221,11 @@
                     // Enter
                     else if (e.which === 13) {
                         $select.change();
-                        $input.removeClass("focus").blur();
+                        closeDropdown();
                         match = true;
                     }
                     // Type-to-select while the dropdown is open
-                    else if ($input.hasClass("focus") && !e.ctrlKey && !e.metaKey && !e.altKey) {
+                    else if (!filterEnabled && $input.hasClass("focus") && !e.ctrlKey && !e.metaKey && !e.altKey) {
                         var key = e.key;
 
                         // Support browsers that do not provide KeyboardEvent.key
@@ -267,6 +278,7 @@
                         var activeElement = document.activeElement,
                             ul = $ul.get(0);
                         if ($ul.is(":visible") && ul !== activeElement && !$.contains(ul, activeElement)) {
+                            restoreFilterInput();
                             $input.removeClass("focus");
                         }
                     }, 100);
@@ -416,6 +428,7 @@
                     if ($select.is(":disabled")) {
                         return;
                     }
+                    var alreadyOpen = $(this).hasClass("focus");
 
                     if (options.lazyload) {
                         initElementOptions($select);
@@ -444,11 +457,12 @@
                     $(this).next("ul").css("max-height", height - 20);
                     $(this).addClass("focus");
 
-                    if (filterEnabled) {
-                        $filterInput.val("");
+                    if (filterEnabled && !alreadyOpen) {
+                        $(this).removeAttr("readonly");
+                        $(this).val("");
                         filterOptions("");
                         setTimeout(function () {
-                            $filterInput.focus();
+                            $input.focus();
                         }, 0);
                     }
                 });
@@ -460,15 +474,12 @@
                     // Don't close the dropdown if user is clicking inside the dynamic-opts widget
                     if ($(e.target).parents(".dropdownjs-add").length || $(e.target).is(".dropdownjs-add")) return;
 
-                    // Don't close the dropdown while using the filter
-                    if ($(e.target).parents(".dropdownjs-filter").length || $(e.target).is(".dropdownjs-filter")) return;
-
                     // Close opened dropdowns
                     $(".dropdownjs > ul > li").attr("tabindex", -1);
                     if ($(e.target).hasClass("disabled") || $(e.target).hasClass("dropdownjs")) {
                         return;
                     }
-                    $input.removeClass("focus");
+                    closeDropdown();
                 });
             }
 

@@ -28,13 +28,13 @@ With this command we init every `.select` element (yes they are initialized alwa
 
 ### Filter options
 
-Dropdown filtering is enabled by default. Disable it globally through the plugin options:
+Dropdown filtering is disabled by default. Enable it globally through the plugin options. When enabled, the selected-value field becomes searchable while the dropdown is open:
 
-    $(".select").dropdown({ "filter": false });
+    $(".select").dropdown({ "filter": true });
 
 Override the setting for an individual select with the `data-filter` attribute:
 
-    <select class="select" data-filter="false"></select>
+    <select class="select" data-filter="true"></select>
 
 ### Please don't fill my DOM with thousand of DIVs!!!
 

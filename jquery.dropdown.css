@@ -28,14 +28,14 @@
   -webkit-transform-origin: bottom left;
       -ms-transform-origin: bottom left;
           transform-origin: bottom left;
-  bottom: 0;
+  bottom: 100%;
   left: 0;
 }
 .dropdownjs > ul[placement=bottom-left] {
   -webkit-transform-origin: top left;
       -ms-transform-origin: top left;
           transform-origin: top left;
-  top: 0;
+  top: 100%;
   left: 0;
 }
 .dropdownjs > ul  > li {
@@ -44,18 +44,6 @@
 }
 .dropdownjs > ul  > li.dropdownjs-add {
   padding: 0;
-}
-.dropdownjs > ul > li.dropdownjs-filter {
-  position: sticky;
-  top: -10px;
-  z-index: 1;
-  padding: 10px;
-  background: #FFF;
-}
-.dropdownjs > ul > li.dropdownjs-filter > input {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid #d4d4d4;
 }
 .dropdownjs > ul > li.dropdownjs-no-results {
   cursor: default;
@@ -88,11 +76,11 @@ select[data-dropdownjs][disabled] + .dropdownjs > input[readonly] {
   cursor: pointer;
   word-wrap: break-word;
 }
-.dropdownjs > ul > li.selected,
-.dropdownjs > ul > li:active {
+.dropdownjs > ul > li[role=option].selected,
+.dropdownjs > ul > li[role=option]:active {
   background-color: #eaeaea;
 }
-.dropdownjs > ul > li:focus {
+.dropdownjs > ul > li[role=option]:focus {
   outline: 0;
   outline: 1px solid #d4d4d4;
 }
@@ -122,7 +110,7 @@ select[data-dropdownjs][disabled] + .dropdownjs > input[readonly] {
   -webkit-transform-origin: bottom right;
       -ms-transform-origin: bottom right;
           transform-origin: bottom right;
-  bottom: 0;
+  bottom: 100%;
   left: auto;
   right: 0;
 }
@@ -130,7 +118,7 @@ select[data-dropdownjs][disabled] + .dropdownjs > input[readonly] {
   -webkit-transform-origin: top right;
       -ms-transform-origin: top right;
           transform-origin: top right;
-  top: 0;
+  top: 100%;
   left: auto;
   right: 0;
 }
