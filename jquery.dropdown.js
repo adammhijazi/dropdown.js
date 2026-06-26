@@ -191,6 +191,32 @@
                     $input.removeClass("focus").blur();
                 }
 
+                function getVisibleOptions() {
+                    return $ul.children("li[role=option]:visible:not(.disabled)");
+                }
+
+                function selectByDirection(direction) {
+                    var $options = getVisibleOptions(),
+                        activeEl = $dropdown.find(".selected:visible").last(),
+                        activeIndex = $options.index(activeEl),
+                        nextIndex,
+                        $target;
+
+                    if (!$options.length) {
+                        return;
+                    }
+
+                    if (activeIndex === -1) {
+                        nextIndex = direction > 0 ? 0 : $options.length - 1;
+                    } else {
+                        nextIndex = Math.max(0, Math.min($options.length - 1, activeIndex + direction));
+                    }
+
+                    $target = $options.eq(nextIndex);
+                    methods._select($dropdown, $target);
+                    $ul.scrollTop($ul.scrollTop() + $target.position().top - ($ul.innerHeight() / 2));
+                }
+
                 if (filterEnabled) {
                     $input.on("input", function () {
                         if ($input.hasClass("focus")) {
@@ -201,8 +227,7 @@
 
                 // Handle keyboard navigation
                 $input.on("keydown", function (e) {
-                    var activeEl = $dropdown.find(".selected"),
-                        match = false;
+                    var match = false;
                     // Escape
                     if (e.which === 27) {
                         closeDropdown();
@@ -210,12 +235,12 @@
                     }
                     // Up arrow
                     else if (e.which === 38) {
-                        methods._select($dropdown, activeEl.prev());
+                        selectByDirection(-1);
                         match = true;
                     }
                     // Down arrow
                     else if (e.which === 40) {
-                        methods._select($dropdown, activeEl.next());
+                        selectByDirection(1);
                         match = true;
                     }
                     // Enter
@@ -253,6 +278,7 @@
 
                             if (searchOptions.length) {
                                 if (repeatedKey) {
+                                    var activeEl = $dropdown.find(".selected");
                                     var selectedIndex = searchOptions.index(activeEl);
                                     $target = searchOptions.eq((selectedIndex + 1) % searchOptions.length);
                                 } else {
