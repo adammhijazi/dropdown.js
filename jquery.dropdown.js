@@ -48,7 +48,6 @@
                 var multi = $select.attr("multiple"),
                     // Does it allow to create new options dynamically?
                     dynamicOptions = $select.attr("data-dynamic-opts"),
-                    $dynamicInput = $(),
                     filterEnabled = options.filter,
                     $noResults = $(),
                     // Create the dropdown wrapper
@@ -183,11 +182,21 @@
 
                     filterOptions("");
                     $input.attr("readonly", true);
-                    $input.val($dropdown.find("li.selected").last().text().trim());
+                    if (multi) {
+                        var selectedText = [];
+                        $dropdown.find("li[role=option].selected").each(function () {
+                            selectedText.push($(this).text().trim());
+                        });
+                        $input.val(selectedText.join(", ")).trigger("change");
+                    } else {
+                        $input.val($dropdown.find("li[role=option].selected").last().text().trim()).trigger("change");
+                    }
                 }
 
                 function closeDropdown() {
                     restoreFilterInput();
+                    $ul.children("li[role=option]").removeClass("keyboard-focus");
+                    $input.removeAttr("aria-activedescendant");
                     $input.removeClass("focus").blur();
                 }
 
@@ -197,7 +206,7 @@
 
                 function selectByDirection(direction) {
                     var $options = getVisibleOptions(),
-                        activeEl = $dropdown.find(".selected:visible").last(),
+                        activeEl = multi ? $options.filter(".keyboard-focus").last() : $dropdown.find(".selected:visible").last(),
                         activeIndex = $options.index(activeEl),
                         nextIndex,
                         $target;
@@ -213,7 +222,13 @@
                     }
 
                     $target = $options.eq(nextIndex);
-                    methods._select($dropdown, $target);
+                    if (multi) {
+                        $options.removeClass("keyboard-focus");
+                        $target.addClass("keyboard-focus");
+                        $input.attr("aria-activedescendant", $target.attr("id"));
+                    } else {
+                        methods._select($dropdown, $target);
+                    }
                     $ul.scrollTop($ul.scrollTop() + $target.position().top - ($ul.innerHeight() / 2));
                 }
 
@@ -241,6 +256,15 @@
                     // Down arrow
                     else if (e.which === 40) {
                         selectByDirection(1);
+                        match = true;
+                    }
+                    // Toggle the keyboard-focused option in a multi select
+                    else if (multi && e.which === 32 && $input.hasClass("focus")) {
+                        var $focusedOption = getVisibleOptions().filter(".keyboard-focus").last();
+
+                        if ($focusedOption.length) {
+                            methods._select($dropdown, $focusedOption);
+                        }
                         match = true;
                     }
                     // Enter
@@ -305,6 +329,8 @@
                             ul = $ul.get(0);
                         if ($ul.is(":visible") && ul !== activeElement && !$.contains(ul, activeElement)) {
                             restoreFilterInput();
+                            $ul.children("li[role=option]").removeClass("keyboard-focus");
+                            $input.removeAttr("aria-activedescendant");
                             $input.removeClass("focus");
                         }
                     }, 100);
@@ -336,11 +362,12 @@
 
                 // Add new options when the widget is used
                 if (dynamicOptions && dynamicOptions.length) {
-                    $dynamicInput.on("keydown", function (e) {
+                    $ul.on("keydown", ".dropdownjs-add", function (e) {
                         if (e.which !== 13) return;
-                        var $option = $("<option>"),
-                            val = $dynamicInput.find("input").val();
-                        $dynamicInput.find("input").val("");
+                        var $dynamicOption = $(this),
+                            $option = $("<option>"),
+                            val = $dynamicOption.find("input").val();
+                        $dynamicOption.find("input").val("");
 
                         $option.attr("value", val);
                         $option.text(val);
@@ -384,6 +411,10 @@
                                 methods._addOption($ul, $this);
                             }
                         });
+
+                        if (filterEnabled && m.addedNodes.length) {
+                            filterOptions($input.val());
+                        }
                     });
                 });
 
@@ -398,7 +429,7 @@
                                 return;
                             }
                             setTimeout(function () {
-                                var deletedValue = $(n).attr("value"),
+                                var deletedValue = $(n).val(),
                                     existingOption = $select.children().filter(function () { return this.value === deletedValue; }),
                                     $selected;
 
@@ -407,7 +438,9 @@
                                     methods._updateLiText($ul, deletedValue, existingOption.text());
                                 }
                                 else {
-                                    $ul.find("li").filter(function () { return $(this).data("value") === deletedValue; }).remove();
+                                    $ul.children("li[role=option]").filter(function () {
+                                        return $(this).data("value") === deletedValue;
+                                    }).remove();
                                 }
 
                                 if ($select.find(":selected").length) {
@@ -460,6 +493,10 @@
                         initElementOptions($select);
                     }
 
+                    if (dynamicOptions && !alreadyOpen) {
+                        $ul.find(".dropdownjs-add input").val("");
+                    }
+
                     $(".dropdownjs > ul > li").attr("tabindex", -1);
                     $(".dropdownjs > input").not($(this)).removeClass("focus").blur();
 
@@ -467,7 +504,7 @@
                     var coords = {
                         top: $(this).offset().top - $(document).scrollTop(),
                         left: $(this).offset().left - $(document).scrollLeft(),
-                        bottom: $(window).height() - ($(this).offset().top - $(document).scrollTop()),
+                        bottom: $(window).height() - ($(this).offset().top - $(document).scrollTop()) - $(this).outerHeight(),
                         right: $(window).width() - ($(this).offset().left - $(document).scrollLeft())
                     },
                         height = coords.bottom;
@@ -578,6 +615,21 @@
                 // Cache the dropdown options
                 selectOptions = $dropdown.find("li");
 
+            if ($target.hasClass("disabled")) {
+                return;
+            }
+
+            if ($target.is("option")) {
+                var targetValue = $target.val(),
+                    $matchingOption = selectOptions.filter(function () {
+                        return $(this).data("value") === targetValue;
+                    }).last();
+
+                if ($matchingOption.length) {
+                    $target = $matchingOption;
+                }
+            }
+
             // Behavior for multiple select
             if (multi) {
                 // Toggle option state
@@ -595,14 +647,14 @@
                         text.push($(this).text());
                     }
                 });
-                $input.val(text.join(", "));
+                $input.val(text.join(", ")).trigger("change");
+                if ($.material) {
+                    $select.add($input).toggleClass("empty", !$input.val().trim());
+                }
             }
 
             // Behavior for single select
             if (!multi) {
-                if ($target.hasClass("disabled")) {
-                    return;
-                }
                 // Unselect options except the one that will be selected
                 if ($target.is("li")) {
                     selectOptions.not($target).removeClass("selected");
@@ -616,6 +668,9 @@
                 // which ends up back here, make sure to not end up in an infinite loop.
                 // This is done last so text input is initialized on first load when condition is true.
                 if (value === $select.val()) {
+                    if ($.material) {
+                        $select.add($input).toggleClass("empty", !$input.val().trim());
+                    }
                     return;
                 }
                 // Set the value to the native select
@@ -625,9 +680,9 @@
             // This is used only if Material Design for Bootstrap is selected
             if ($.material) {
                 if ($input.val().trim()) {
-                    $select.removeClass("empty");
+                    $select.add($input).removeClass("empty");
                 } else {
-                    $select.addClass("empty");
+                    $select.add($input).addClass("empty");
                 }
             }
 
@@ -638,6 +693,11 @@
 
         },
         _addOption: function ($ul, $this) {
+            if ($ul.data("select").attr("multiple") && !$this.val()) {
+                $this.prop("selected", false);
+                return;
+            }
+
             // Create the option
             var $option = $("<li id=\"dd-item-" + methods.dropdownIndex + "-" + methods.options.optionIndex++ + "\" role=\"option\"></li>");
 
@@ -657,9 +717,13 @@
             $option.data("option-index", $ul.data("select").find("option").index($this));
 
             // Will user be able to remove this option?
-            if ($ul.data("select").attr("data-dynamic-opts")) {
+            if ($ul.data("select").attr("data-dynamic-opts") && $this.val()) {
                 $option.append("<span class=close></span>");
-                $option.find(".close").on("click", function () {
+                $option.find(".close").on("mousedown", function (e) {
+                    e.preventDefault();
+                });
+                $option.find(".close").on("click", function (e) {
+                    e.stopPropagation();
                     $option.remove();
                     $this.remove();
                 });
@@ -672,7 +736,7 @@
             }
 
             if ($this.prop("disabled")) {
-                $option.addClass("disabled");
+                $option.addClass("disabled").attr("aria-disabled", "true");
             }
 
             // Append option to our dropdown

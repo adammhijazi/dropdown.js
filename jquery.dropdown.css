@@ -84,6 +84,9 @@ select[data-dropdownjs][disabled] + .dropdownjs > input[readonly] {
   outline: 0;
   outline: 1px solid #d4d4d4;
 }
+.dropdownjs > ul > li[role=option].keyboard-focus {
+  outline: 1px solid #d4d4d4;
+}
 .dropdownjs > ul > li > .close:before {
   content: "\00d7";
   display: block;
