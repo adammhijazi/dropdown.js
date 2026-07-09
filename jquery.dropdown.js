@@ -144,7 +144,8 @@
                 // DROPDOWN EVENTS                       //
                 //---------------------------------------//
                 var searchBuffer = "",
-                    lastSearchTime = 0;
+                    lastSearchTime = 0,
+                    keyboardNavigated = false;
 
                 function filterOptions(query) {
                     var normalizedQuery = query.trim().toLowerCase(),
@@ -197,6 +198,7 @@
                     restoreFilterInput();
                     $ul.children("li[role=option]").removeClass("keyboard-focus");
                     $input.removeAttr("aria-activedescendant");
+                    keyboardNavigated = false;
                     $input.removeClass("focus").blur();
                 }
 
@@ -222,6 +224,7 @@
                     }
 
                     $target = $options.eq(nextIndex);
+                    keyboardNavigated = true;
                     if (multi) {
                         $options.removeClass("keyboard-focus");
                         $target.addClass("keyboard-focus");
@@ -236,6 +239,9 @@
                     $input.on("input", function () {
                         if ($input.hasClass("focus")) {
                             filterOptions($(this).val());
+                            keyboardNavigated = false;
+                            $ul.children("li[role=option]").removeClass("keyboard-focus");
+                            $input.removeAttr("aria-activedescendant");
                         }
                     });
                 }
@@ -269,6 +275,13 @@
                     }
                     // Enter
                     else if (e.which === 13) {
+                        if (filterEnabled && $input.hasClass("focus") && $input.val().trim() && !keyboardNavigated) {
+                            var $firstVisibleOption = getVisibleOptions().first();
+
+                            if ($firstVisibleOption.length) {
+                                methods._select($dropdown, $firstVisibleOption);
+                            }
+                        }
                         $select.change();
                         closeDropdown();
                         match = true;
