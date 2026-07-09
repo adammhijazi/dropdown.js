@@ -63,7 +63,7 @@
                 $dropdown.data("select", $select);
 
                 // Create the fake input used as "select" element and cache it as $input
-                var $input = $("<input type=\"text\" readonly class=\"fakeinput\" aria-haspopup=\"listbox\" aria-label=\"Option\">");
+                var $input = $("<input type=\"text\" readonly inputmode=\"none\" class=\"fakeinput\" aria-haspopup=\"listbox\" aria-label=\"Option\">");
                 if ($dropdownLabel && $dropdownLabel.attr("id")) {
                     $input.attr("aria-labelledby='" + $dropdownLabel.attr("id") + "'");
                 }
@@ -160,17 +160,17 @@
                     });
 
                     if (normalizedQuery) {
-                        $options.filter(":visible").sort(function (a, b) {
+                        $($options.filter(":visible").get().sort(function (a, b) {
                             var $a = $(a),
                                 $b = $(b);
 
                             return $a.data("match-index") - $b.data("match-index") ||
                                 $a.data("option-index") - $b.data("option-index");
-                        }).insertBefore($noResults);
+                        })).insertBefore($noResults);
                     } else {
-                        $options.sort(function (a, b) {
+                        $($options.get().sort(function (a, b) {
                             return $(a).data("option-index") - $(b).data("option-index");
-                        }).insertBefore($noResults);
+                        })).insertBefore($noResults);
                     }
 
                     $noResults.toggle(Boolean(normalizedQuery) && !$options.filter(":visible").length);
@@ -183,6 +183,7 @@
 
                     filterOptions("");
                     $input.attr("readonly", true);
+                    $input.attr("inputmode", "none");
                     if (multi) {
                         var selectedText = [];
                         $dropdown.find("li[role=option].selected").each(function () {
@@ -535,6 +536,7 @@
 
                     if (filterEnabled && !alreadyOpen) {
                         $(this).removeAttr("readonly");
+                        $(this).attr("inputmode", "search");
                         $(this).val("");
                         filterOptions("");
                         setTimeout(function () {
