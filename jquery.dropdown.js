@@ -45,7 +45,7 @@
                 }
 
                 // Is it a multi select?
-                var multi = $select.attr("multiple"),
+                var multi = $select.prop("multiple"),
                     // Does it allow to create new options dynamically?
                     dynamicOptions = $select.attr("data-dynamic-opts"),
                     filterEnabled = options.filter,
@@ -129,6 +129,12 @@
 
                 // Bring to life our awesome dropdownjs
                 $select.after($dropdown);
+
+                if ($.material && !$input.val().trim()) {
+                    setTimeout(function () {
+                        $input.trigger("change");
+                    }, 0);
+                }
 
                 // If lazyload is disabled, construct the dropdown options immediately
                 if (!options.lazyload) {
@@ -350,6 +356,11 @@
                     }, 100);
                 });
                 // On click, set the clicked one as selected
+                $ul.on("mousedown", "li[role=option]", function (e) {
+                    if (multi) {
+                        e.preventDefault();
+                    }
+                });
                 $ul.on("click", "li[role=option]", function (e) {
                     methods._select($dropdown, $(this));
                   
@@ -547,7 +558,7 @@
                 // Close every dropdown on click outside
                 $(document).on("click", function (e) {
                     // Don't close the multi dropdown if user is clicking inside it
-                    if (multi && $(e.target).parents(".dropdownjs").length) return;
+                    if (multi && $(e.target).closest(".dropdownjs").length) return;
 
                     // Don't close the dropdown if user is clicking inside the dynamic-opts widget
                     if ($(e.target).parents(".dropdownjs-add").length || $(e.target).is(".dropdownjs-add")) return;
@@ -626,7 +637,7 @@
             var $select = $dropdown.data("select"),
                 $input = $dropdown.find("input.fakeinput"),
                 // Is it a multi select?
-                multi = $select.attr("multiple"),
+                multi = $select.prop("multiple"),
                 // Cache the dropdown options
                 selectOptions = $dropdown.find("li");
 
@@ -652,7 +663,9 @@
                 // Toggle selection of the clicked option in native select
                 $target.each(function () {
                     var value = $(this).prop("tagName") === "OPTION" ? $(this).val() : $(this).data("value"),
-                        $selected = $select.find("[value=\"" + value + "\"]");
+                        $selected = $select.find("option").filter(function () {
+                            return $(this).val() === value;
+                        });
                     $selected.prop("selected", $(this).hasClass("selected"));
                 });
                 // Add or remove the value from the input
@@ -708,7 +721,7 @@
 
         },
         _addOption: function ($ul, $this) {
-            if ($ul.data("select").attr("multiple") && !$this.val()) {
+            if ($ul.data("select").prop("multiple") && !$this.val()) {
                 $this.prop("selected", false);
                 return;
             }
