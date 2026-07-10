@@ -21,14 +21,34 @@
 <br>
 <br>
 <br>
-
-
+    <p>Brake system is disabled in all the dropdowns to test how it would function</p>
     <br><br><br>
-     <select class="select form-control floating-label" placeholder="Select a service type" data-filter="true">
+    <p>Single select, filter off</p>
+     <select class="select form-control floating-label" id="multi" placeholder="Select a service type" data-filter="false">
       <option></option>
       <option>Air Conditioning &amp; Heating</option>
       <option>Alignment inspection</option>
-      <option>Brake System</option>
+      <option disabled>Brake System</option>
+      <option>Cooling System</option>
+      <option>Engine Service</option>
+      <option>Fluid Service</option>
+      <option>Fuel System</option>
+      <option>Maintenance Services</option>
+      <option>Mercedes Services</option>
+      <option>Steering &amp; Suspension</option>
+      <option>Tires</option>
+      <option>Transmission services</option>
+      <option>Tune - up</option>
+    </select>
+
+
+    <br><br><br>
+    <p>Single select, filter on</p>
+     <select class="select form-control floating-label" id="multi" placeholder="Select a service type" data-filter="true">
+      <option></option>
+      <option>Air Conditioning &amp; Heating</option>
+      <option>Alignment inspection</option>
+      <option disabled>Brake System</option>
       <option>Cooling System</option>
       <option>Engine Service</option>
       <option>Fluid Service</option>
@@ -42,7 +62,123 @@
     </select>
 
     <br><br><br>
+    <p>Multiple select, filter on</p>
+     <select class="select form-control floating-label" id="multi" placeholder="Select a service type" data-filter="true" multiple>
+      <option></option>
+      <option>Air Conditioning &amp; Heating</option>
+      <option>Alignment inspection</option>
+      <option disabled>Brake System</option>
+      <option>Cooling System</option>
+      <option>Engine Service</option>
+      <option>Fluid Service</option>
+      <option>Fuel System</option>
+      <option>Maintenance Services</option>
+      <option>Mercedes Services</option>
+      <option>Steering &amp; Suspension</option>
+      <option>Tires</option>
+      <option>Transmission services</option>
+      <option>Tune - up</option>
+    </select>
 
+
+    <br><br><br>
+    <p>Multiple select, filter off</p>
+     <select class="select form-control floating-label" id="multi" placeholder="Select a service type" data-filter="false" multiple>
+      <option></option>
+      <option>Air Conditioning &amp; Heating</option>
+      <option>Alignment inspection</option>
+      <option disabled>Brake System</option>
+      <option>Cooling System</option>
+      <option>Engine Service</option>
+      <option>Fluid Service</option>
+      <option>Fuel System</option>
+      <option>Maintenance Services</option>
+      <option>Mercedes Services</option>
+      <option>Steering &amp; Suspension</option>
+      <option>Tires</option>
+      <option>Transmission services</option>
+      <option>Tune - up</option>
+    </select>
+
+    <br><br><br>
+    <p>Single select, filter on, dynamic options on</p>
+     <select class="select form-control floating-label" id="multi" placeholder="Select a service type" data-filter="true" data-dynamic-opts="true" >
+      <option></option>
+      <option>Air Conditioning &amp; Heating</option>
+      <option>Alignment inspection</option>
+      <option disabled>Brake System</option>
+      <option>Cooling System</option>
+      <option>Engine Service</option>
+      <option>Fluid Service</option>
+      <option>Fuel System</option>
+      <option>Maintenance Services</option>
+      <option>Mercedes Services</option>
+      <option>Steering &amp; Suspension</option>
+      <option>Tires</option>
+      <option>Transmission services</option>
+      <option>Tune - up</option>
+    </select>
+
+
+    <br><br><br>
+    <p>Single select, filter off, dynamic options on</p>
+     <select class="select form-control floating-label" id="multi" placeholder="Select a service type" data-filter="false" data-dynamic-opts="true" >
+      <option></option>
+      <option>Air Conditioning &amp; Heating</option>
+      <option>Alignment inspection</option>
+      <option disabled>Brake System</option>
+      <option>Cooling System</option>
+      <option>Engine Service</option>
+      <option>Fluid Service</option>
+      <option>Fuel System</option>
+      <option>Maintenance Services</option>
+      <option>Mercedes Services</option>
+      <option>Steering &amp; Suspension</option>
+      <option>Tires</option>
+      <option>Transmission services</option>
+      <option>Tune - up</option>
+    </select>
+
+    <br><br><br>
+    <p>Multiple select, filter on, dynamic options on</p>
+     <select class="select form-control floating-label" id="multi" placeholder="Select a service type" data-filter="true" data-dynamic-opts="true" multiple>
+      <option></option>
+      <option>Air Conditioning &amp; Heating</option>
+      <option>Alignment inspection</option>
+      <option disabled>Brake System</option>
+      <option>Cooling System</option>
+      <option>Engine Service</option>
+      <option>Fluid Service</option>
+      <option>Fuel System</option>
+      <option>Maintenance Services</option>
+      <option>Mercedes Services</option>
+      <option>Steering &amp; Suspension</option>
+      <option>Tires</option>
+      <option>Transmission services</option>
+      <option>Tune - up</option>
+    </select>
+
+    <br><br><br>
+    <p>Multiple select, filter off, dynamic options on</p>
+     <select class="select form-control floating-label" id="multi" placeholder="Select a service type" data-filter="false" data-dynamic-opts="true" multiple>
+      <option></option>
+      <option>Air Conditioning &amp; Heating</option>
+      <option>Alignment inspection</option>
+      <option disabled>Brake System</option>
+      <option>Cooling System</option>
+      <option>Engine Service</option>
+      <option>Fluid Service</option>
+      <option>Fuel System</option>
+      <option>Maintenance Services</option>
+      <option>Mercedes Services</option>
+      <option>Steering &amp; Suspension</option>
+      <option>Tires</option>
+      <option>Transmission services</option>
+      <option>Tune - up</option>
+    </select>
+
+    <br><br><br>
+    <p>Basic native multiple select autoinit test</p>
     <select id="multi" multiple>
       <option value="1">1</option>
       <option value="2">2</option>
@@ -61,11 +197,10 @@
       $.material.init();
 
       $(document).ready(function() {
-        $("select").dropdown({
-          "optionClass": "withripple",
-          "autoinit": "select"
-        });
+        $(".select").dropdown({"optionClass": "withripple"});
       });
+
+      $().dropdown({autoinit: "select"});
 
       $("button").click(function() {
         $("body").append("<select class=select><option>hey</option><option>hey</option></select>");

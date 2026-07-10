@@ -322,14 +322,20 @@
 
                             if (searchOptions.length) {
                                 if (repeatedKey) {
-                                    var activeEl = $dropdown.find(".selected");
+                                    var activeEl = multi ? searchOptions.filter(".keyboard-focus").last() : $dropdown.find(".selected");
                                     var selectedIndex = searchOptions.index(activeEl);
                                     $target = searchOptions.eq((selectedIndex + 1) % searchOptions.length);
                                 } else {
                                     $target = searchOptions.first();
                                 }
 
-                                methods._select($dropdown, $target);
+                                if (multi) {
+                                    getVisibleOptions().removeClass("keyboard-focus");
+                                    $target.addClass("keyboard-focus");
+                                    $input.attr("aria-activedescendant", $target.attr("id"));
+                                } else {
+                                    methods._select($dropdown, $target);
+                                }
                                 $ul.scrollTop($ul.scrollTop() + $target.position().top - ($ul.innerHeight() / 2));
                             }
 
