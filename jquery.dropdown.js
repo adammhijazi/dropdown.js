@@ -255,7 +255,8 @@
 
                 // Handle keyboard navigation
                 $input.on("keydown", function (e) {
-                    var match = false;
+                    var match = false,
+                        isSpaceKey = e.which === 32 || e.key === " " || e.key === "Spacebar";
                     // Escape
                     if (e.which === 27) {
                         closeDropdown();
@@ -272,13 +273,20 @@
                         match = true;
                     }
                     // Toggle the keyboard-focused option in a multi select
-                    else if (multi && e.which === 32 && $input.hasClass("focus")) {
+                    else if (multi && isSpaceKey && $input.hasClass("focus") && (getVisibleOptions().filter(".keyboard-focus").length || $input.is("[readonly]"))) {
                         var $focusedOption = getVisibleOptions().filter(".keyboard-focus").last();
 
                         if ($focusedOption.length) {
+                            e.preventDefault();
                             methods._select($dropdown, $focusedOption);
+                            $focusedOption.addClass("keyboard-focus");
+                            $input.attr("aria-activedescendant", $focusedOption.attr("id"));
+                            keyboardNavigated = true;
+                            match = true;
+                        } else if ($input.is("[readonly]")) {
+                            e.preventDefault();
+                            match = true;
                         }
-                        match = true;
                     }
                     // Enter
                     else if (e.which === 13) {
@@ -674,16 +682,18 @@
                         });
                     $selected.prop("selected", $(this).hasClass("selected"));
                 });
-                // Add or remove the value from the input
-                var text = [];
-                selectOptions.each(function () {
-                    if ($(this).hasClass("selected")) {
-                        text.push($(this).text());
+                if (!filterEnabled || $input.is("[readonly]")) {
+                    // Add or remove the value from the input
+                    var text = [];
+                    selectOptions.each(function () {
+                        if ($(this).hasClass("selected")) {
+                            text.push($(this).text());
+                        }
+                    });
+                    $input.val(text.join(", ")).trigger("change");
+                    if ($.material) {
+                        $select.add($input).toggleClass("empty", !$input.val().trim());
                     }
-                });
-                $input.val(text.join(", ")).trigger("change");
-                if ($.material) {
-                    $select.add($input).toggleClass("empty", !$input.val().trim());
                 }
             }
 
