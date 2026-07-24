@@ -56,36 +56,37 @@
                     $dropdownLabel = $select.attr("id") ? $("label[for='" + $select.attr("id") + "']") : null;
 
                 if ($select.is("[data-filter]")) {
-                    filterEnabled = String($select.attr("data-filter")).toLowerCase() !== "false";
+                    filterEnabled = String($select.attr("data-filter")).toLowerCase() === "true";
                 }
 
                 $dropdown.addClass("dropdownjs").addClass(options.dropdownClass);
                 $dropdown.data("select", $select);
+                $dropdown.data("filter", filterEnabled);
 
                 // Create the fake input used as "select" element and cache it as $input
                 var $input = $("<input type=\"text\" readonly inputmode=\"none\" class=\"fakeinput\" aria-haspopup=\"listbox\" aria-label=\"Option\">");
                 if ($dropdownLabel && $dropdownLabel.attr("id")) {
-                    $input.attr("aria-labelledby='" + $dropdownLabel.attr("id") + "'");
+                    $input.attr("aria-labelledby", $dropdownLabel.attr("id"));
                 }
                 if ($.material) { $input.data("mdproc", true); }
                 // Append it to the dropdown wrapper
                 $dropdown.append($input);
 
                 // Create the UL that will be used as dropdown and cache it as $ul
-                // Set translate to no as translations in select will propagate when elements are added	
+                // Set translate to no as translations in select will propagate when elements are added
                 var $ul = $("<ul class=\"notranslate\" translate=\"no\" role=\"listbox\" tabindex=\"-1\" aria-label=\"Choose a value\"></ul>");
                 $ul.data("select", $select);
-                // Copy all aria attributes	
+                // Copy all aria attributes
                 $.each([].slice.call($select.get(0).attributes).filter(function (attr) {
                     return attr && attr.name && attr.name.indexOf("aria") === 0;
                 }), function () {
                     $dropdown.attr(this.name, this.value);
                 });
                 if ($dropdownLabel && $dropdownLabel.attr("id")) {
-                    $ul.attr("aria-labelledby='" + $dropdownLabel.attr("id") + "'");
+                    $ul.attr("aria-labelledby", $dropdownLabel.attr("id"));
                 }
 
-                // Append it to the dropdown	
+                // Append it to the dropdown
                 $dropdown.append($ul);
 
                 if (filterEnabled) {
@@ -125,7 +126,7 @@
                 $input.addClass($select[0].className);
 
                 // Hide the old and ugly select
-                $select.hide().attr("data-dropdownjs", true);
+                $select.hide().attr("data-dropdownjs", true).data("dropdownjs", true);
 
                 // Bring to life our awesome dropdownjs
                 $select.after($dropdown);
@@ -151,7 +152,8 @@
                 //---------------------------------------//
                 var searchBuffer = "",
                     lastSearchTime = 0,
-                    keyboardNavigated = false;
+                    keyboardNavigated = false,
+                    selectedSinceInput = false;
 
                 function filterOptions(query) {
                     var normalizedQuery = query.trim().toLowerCase(),
@@ -201,12 +203,25 @@
                     }
                 }
 
+                function syncMaterialState(closed) {
+                    if (!$.material) {
+                        return;
+                    }
+
+                    var $formGroup = $input.closest(".form-group");
+                    $formGroup.toggleClass("is-empty", !$input.val().trim());
+                    if (closed) {
+                        $formGroup.removeClass("is-focused");
+                    }
+                }
+
                 function closeDropdown() {
                     restoreFilterInput();
                     $ul.children("li[role=option]").removeClass("keyboard-focus");
                     $input.removeAttr("aria-activedescendant");
                     keyboardNavigated = false;
                     $input.removeClass("focus").blur();
+                    syncMaterialState(true);
                 }
 
                 function getVisibleOptions() {
@@ -247,6 +262,7 @@
                         if ($input.hasClass("focus")) {
                             filterOptions($(this).val());
                             keyboardNavigated = false;
+                            selectedSinceInput = false;
                             $ul.children("li[role=option]").removeClass("keyboard-focus");
                             $input.removeAttr("aria-activedescendant");
                         }
@@ -282,6 +298,7 @@
                             $focusedOption.addClass("keyboard-focus");
                             $input.attr("aria-activedescendant", $focusedOption.attr("id"));
                             keyboardNavigated = true;
+                            selectedSinceInput = true;
                             match = true;
                         } else if ($input.is("[readonly]")) {
                             e.preventDefault();
@@ -290,7 +307,7 @@
                     }
                     // Enter
                     else if (e.which === 13) {
-                        if (filterEnabled && $input.hasClass("focus") && $input.val().trim() && !keyboardNavigated) {
+                        if (filterEnabled && $input.hasClass("focus") && $input.val().trim() && !keyboardNavigated && !selectedSinceInput) {
                             var $firstVisibleOption = getVisibleOptions().first();
 
                             if ($firstVisibleOption.length) {
@@ -366,6 +383,7 @@
                             $ul.children("li[role=option]").removeClass("keyboard-focus");
                             $input.removeAttr("aria-activedescendant");
                             $input.removeClass("focus");
+                            syncMaterialState(true);
                         }
                     }, 100);
                 });
@@ -377,7 +395,8 @@
                 });
                 $ul.on("click", "li[role=option]", function (e) {
                     methods._select($dropdown, $(this));
-                  
+                    selectedSinceInput = true;
+
                     // trigger change event, if declared on the original selector
                     $select.change();
                 });
@@ -509,14 +528,22 @@
                         methods._select($dropdown, $selected);
                     } else {
                         var target = $select.find(":selected"),
-                            values = $(this).val();
+                            values = $(this).val() || [],
+                            $selectOptions = $ul.children("li[role=option]"),
+                            text = [];
                         // Unselect all options
-                        selectOptions.removeClass("selected");
+                        $selectOptions.removeClass("selected");
                         // Select options
                         target.each(function () {
-                            var selected = selectOptions.filter(function () { return $.inArray($(this).data("value"), values) !== -1; });
+                            var selected = $selectOptions.filter(function () { return $.inArray($(this).data("value"), values) !== -1; });
                             selected.addClass("selected");
                         });
+                        if (!filterEnabled || $input.is("[readonly]") || !$input.hasClass("focus")) {
+                            target.each(function () {
+                                text.push($(this).text().trim());
+                            });
+                            $input.val(text.join(", ")).trigger("change");
+                        }
                     }
                 });
 
@@ -650,6 +677,7 @@
 
             var $select = $dropdown.data("select"),
                 $input = $dropdown.find("input.fakeinput"),
+                filterEnabled = $dropdown.data("filter"),
                 // Is it a multi select?
                 multi = $select.prop("multiple"),
                 // Cache the dropdown options
@@ -690,10 +718,12 @@
                             text.push($(this).text());
                         }
                     });
-                    $input.val(text.join(", ")).trigger("change");
+                    $input.val(text.join(", "));
                     if ($.material) {
-                        $select.add($input).toggleClass("empty", !$input.val().trim());
+                        $select.toggleClass("empty", !$input.val().trim());
+                        $input.closest(".form-group").toggleClass("is-empty", !$input.val().trim());
                     }
+                    $input.trigger("change");
                 }
             }
 
