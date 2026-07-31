@@ -70,7 +70,14 @@ select[data-dropdownjs][disabled] + .dropdownjs > input[readonly] {
           transition: transform 0.2s ease-out;
   padding: 10px;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
   max-width: 500px;
+}
+.dropdownjs > ul.dropdownjs-scrollable {
+  background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(0, 0, 0, 0.12));
+  background-position: bottom;
+  background-repeat: no-repeat;
+  background-size: 100% 24px;
 }
 .dropdownjs > ul > li {
   cursor: pointer;

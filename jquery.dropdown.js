@@ -575,10 +575,11 @@
                     $(".dropdownjs > input").not($(this)).removeClass("focus").blur();
 
                     // Set height of the dropdown
-                    var coords = {
+                    var viewportHeight = window.visualViewport ? window.visualViewport.height : $(window).height(),
+                        coords = {
                         top: $(this).offset().top - $(document).scrollTop(),
                         left: $(this).offset().left - $(document).scrollLeft(),
-                        bottom: $(window).height() - ($(this).offset().top - $(document).scrollTop()) - $(this).outerHeight(),
+                        bottom: viewportHeight - ($(this).offset().top - $(document).scrollTop()) - $(this).outerHeight(),
                         right: $(window).width() - ($(this).offset().left - $(document).scrollLeft())
                     },
                         height = coords.bottom;
@@ -591,7 +592,8 @@
                         $ul.attr("placement", $("body").hasClass("rtl") ? "bottom-right" : "bottom-left");
                     }
 
-                    $(this).next("ul").css("max-height", height - 20);
+                    $(this).next("ul").css("max-height", Math.max(height - 20, 100));
+                    $ul.toggleClass("dropdownjs-scrollable", $ul[0].scrollHeight > $ul.innerHeight());
                     $(this).addClass("focus");
 
                     if (filterEnabled && !alreadyOpen) {
