@@ -489,6 +489,7 @@
                             setTimeout(function () {
                                 var deletedValue = $(n).val(),
                                     existingOption = $select.children().filter(function () { return this.value === deletedValue; }),
+                                    optionRemoved = false,
                                     $selected;
 
                                 // Option was not actually removed, likely subtree nodes were modified triggering this
@@ -499,15 +500,22 @@
                                     $ul.children("li[role=option]").filter(function () {
                                         return $(this).data("value") === deletedValue;
                                     }).remove();
+                                    optionRemoved = true;
                                 }
 
-                                if ($select.find(":selected").length) {
-                                    $selected = $select.find(":selected").last();
+                                if (multi) {
+                                    if (optionRemoved) {
+                                        $select.change();
+                                    }
+                                } else {
+                                    if ($select.find(":selected").length) {
+                                        $selected = $select.find(":selected").last();
+                                    }
+                                    else {
+                                        $selected = $select.find("option, li").first();
+                                    }
+                                    methods._select($dropdown, $selected);
                                 }
-                                else {
-                                    $selected = $select.find("option, li").first();
-                                }
-                                methods._select($dropdown, $selected);
                             }, 100);
                         });
                     });
@@ -642,6 +650,10 @@
             }
 
             if (options.autoinit) {
+                $(options.autoinit).each(function () {
+                    initElement($(this));
+                });
+
                 var addedNodesObserver = new MutationObserver(function (mutationList) {
                     return mutationList.filter(function (m) {
                         return m.type === "childList";
